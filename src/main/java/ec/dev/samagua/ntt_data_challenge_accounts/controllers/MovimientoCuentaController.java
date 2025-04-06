@@ -1,11 +1,9 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.controllers;
 
-
-
-import ec.dev.samagua.ntt_data_challenge_accounts.dtos.CuentaDto;
-import ec.dev.samagua.ntt_data_challenge_accounts.dtos_mappers.CuentaDtoMapper;
-import ec.dev.samagua.ntt_data_challenge_accounts.entities.Cuenta;
-import ec.dev.samagua.ntt_data_challenge_accounts.services.CuentaService;
+import ec.dev.samagua.ntt_data_challenge_accounts.dtos.MovimientoCuentaDto;
+import ec.dev.samagua.ntt_data_challenge_accounts.dtos_mappers.MovimientoCuentaDtoMapper;
+import ec.dev.samagua.ntt_data_challenge_accounts.entities.MovimientoCuenta;
+import ec.dev.samagua.ntt_data_challenge_accounts.services.MovimientoCuentaService;
 import ec.dev.samagua.ntt_data_challenge_accounts.utils_controllers_models.ControllerResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,14 +18,14 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api")
-public class CuentaController {
+public class MovimientoCuentaController {
 
-    private final CuentaService service;
-    private final CuentaDtoMapper mapper;
+    private final MovimientoCuentaService service;
+    private final MovimientoCuentaDtoMapper mapper;
 
-    @GetMapping("/cuentas")
-    public Mono<ControllerResult<List<CuentaDto>>> findAll() {
-        Mono<List<Cuenta>> entities = service.findAll();
+    @GetMapping("/movimientos")
+    public Mono<ControllerResult<List<MovimientoCuentaDto>>> findAll() {
+        Mono<List<MovimientoCuenta>> entities = service.findAll();
         return entities.map(obj -> ControllerResult.getSuccessResult(obj.stream().map(mapper::entityToDto).toList()));
     }
 

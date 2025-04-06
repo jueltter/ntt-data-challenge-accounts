@@ -1,4 +1,4 @@
-package ec.dev.samagua.ntt_data_challenge_accounts.controllers_models;
+package ec.dev.samagua.ntt_data_challenge_accounts.utils_exceptions;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ControllerResultErrorDetail {
+public class RepositoryExceptionDetail {
     private String code;
     private String message;
-    private String field;
-    private String value;
-
 }

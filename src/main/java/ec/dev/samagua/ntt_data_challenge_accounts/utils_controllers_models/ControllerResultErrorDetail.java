@@ -1,4 +1,4 @@
-package ec.dev.samagua.ntt_data_challenge_accounts.services_models;
+package ec.dev.samagua.ntt_data_challenge_accounts.utils_controllers_models;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ServiceResultError {
+public class ControllerResultErrorDetail {
     private String code;
-    private String message;
     private String field;
-    private String value;
+    private String message;
+    //private String value;
+
 }
