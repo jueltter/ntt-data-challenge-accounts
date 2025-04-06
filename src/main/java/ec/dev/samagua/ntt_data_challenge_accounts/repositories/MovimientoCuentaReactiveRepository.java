@@ -6,9 +6,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public interface MovimientoCuentaReactiveRepository extends ReactiveCrudRepository<MovimientoCuenta, Long>  {
     Mono<Long> countByCuenta(Long cuenta);
-    Flux<MovimientoCuenta> findByCuentaAndFechaBetween(Long cuenta, LocalDate fechaInicial, LocalDate fechaFinal);
+    Flux<MovimientoCuenta> findByCuentaAndFechaBetween(Long cuenta, LocalDateTime fechaInicial, LocalDateTime fechaFinal);
     Flux<MovimientoCuenta> findByCuenta(Long cuenta);
 }

@@ -1,6 +1,5 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.repositories;
 
-import ec.dev.samagua.ntt_data_challenge_accounts.entities.Cuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.entities.MovimientoCuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.utils_exceptions.RepositoryException;
 import lombok.RequiredArgsConstructor;
@@ -8,8 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDate;
-import java.util.Collections;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -31,7 +29,7 @@ public class MovimientoCuentaRepository {
                 .doOnError(e -> log.error("Error counting account movements by account", e));
     }
 
-    public Mono<List<MovimientoCuenta>> findByCuentaAndFechaBetween(Long cuenta, LocalDate fechaInicial, LocalDate fechaFinal) {
+    public Mono<List<MovimientoCuenta>> findByCuentaAndFechaBetween(Long cuenta, LocalDateTime fechaInicial, LocalDateTime fechaFinal) {
         return repository.findByCuentaAndFechaBetween(cuenta, fechaInicial, fechaFinal)
                 .onErrorMap(RepositoryException::getReadException)
                 .doOnError(e -> log.error("Error finding account movements by account and date range", e))
