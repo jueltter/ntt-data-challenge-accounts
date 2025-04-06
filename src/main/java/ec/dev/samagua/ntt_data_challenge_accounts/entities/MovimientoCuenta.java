@@ -1,5 +1,6 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.entities;
 
+import ec.dev.samagua.ntt_data_challenge_accounts.utils_models.DataValidationResult;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +12,9 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 @Table(name = "movimiento_cuenta")
@@ -19,6 +23,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class MovimientoCuenta {
+    private static final List<String> TIPOS_MOVIMIENTO = List.of("RETIRO", "DEPOSITO");
+
     @Id
     @Column(value= "id")
     private Long id;
@@ -40,4 +46,126 @@ public class MovimientoCuenta {
 
     @Transient
     private String numeroCuenta;
+
+    public static MovimientoCuenta getDefaultInstance() {
+        return MovimientoCuenta.builder()
+                .id(-1L)
+                .build();
+    }
+
+    public boolean isValidId() {
+        return getId() != null && getId() > 0;
+    }
+
+
+    public DataValidationResult validateForCreating(BigDecimal balance) {
+        Map<String, String> errors = new HashMap<>();
+
+        // validate id
+        if (this.id != null) {
+            errors.put("id", "must be null");
+        }
+
+        // validate account movement type
+        if (this.getTipoMovimiento() == null || !TIPOS_MOVIMIENTO.contains(this.getTipoMovimiento())) {
+            errors.put("tipoMovimiento", "possible values are: " + TIPOS_MOVIMIENTO);
+        }
+
+        // validate value
+        if (this.getValor() == null || this.getValor().compareTo(BigDecimal.ZERO) == 0) {
+            errors.put("valor", "is mandatory and must be different than 0");
+        }
+        else {
+            if (this.getValor().compareTo(BigDecimal.ZERO) < 0
+                    && balance.compareTo(this.getValor().abs()) < 0) {
+                errors.put("valor", "balance not available");
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            return DataValidationResult.builder()
+                    .valid(Boolean.FALSE)
+                    .errors(errors)
+                    .build();
+
+        }
+
+        return DataValidationResult.builder()
+                .valid(Boolean.TRUE)
+                .errors(null)
+                .build();
+    }
+
+    public DataValidationResult validateForUpdating(BigDecimal balance) {
+        Map<String, String> errors = new HashMap<>();
+
+        // validate account movement type
+        if (this.getTipoMovimiento() == null || !TIPOS_MOVIMIENTO.contains(this.getTipoMovimiento())) {
+            errors.put("tipoMovimiento", "possible values are: " + TIPOS_MOVIMIENTO);
+        }
+
+        // validate value
+        if (this.getValor() == null || this.getValor().compareTo(BigDecimal.ZERO) == 0) {
+            errors.put("valor", "is mandatory and must be different than 0");
+        }
+        else {
+            if (this.getValor().compareTo(BigDecimal.ZERO) < 0
+                    && balance.compareTo(this.getValor().abs()) < 0) {
+                errors.put("valor", "balance not available");
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            return DataValidationResult.builder()
+                    .valid(Boolean.FALSE)
+                    .errors(errors)
+                    .build();
+
+        }
+
+        return DataValidationResult.builder()
+                .valid(Boolean.TRUE)
+                .errors(null)
+                .build();
+    }
+
+    public DataValidationResult validateForPatching(BigDecimal balance) {
+        Map<String, String> errors = new HashMap<>();
+
+        // validate account movement type
+        if (this.getTipoMovimiento() != null && !TIPOS_MOVIMIENTO.contains(this.getTipoMovimiento())) {
+            errors.put("tipoMovimiento", "possible values are: " + TIPOS_MOVIMIENTO);
+        }
+
+        // validate value
+        if (this.getValor() != null) {
+            if (this.getValor().compareTo(BigDecimal.ZERO) == 0) {
+                errors.put("valor", "must be different than 0");
+            }
+            else {
+                if (this.getValor().compareTo(BigDecimal.ZERO) < 0) {
+                    if (balance.compareTo(this.getValor().abs()) < 0)  {
+                        errors.put("valor", "balance not available");
+                    }
+
+                }
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            return DataValidationResult.builder()
+                    .valid(Boolean.FALSE)
+                    .errors(errors)
+                    .build();
+
+        }
+
+        return DataValidationResult.builder()
+                .valid(Boolean.TRUE)
+                .errors(null)
+                .build();
+    }
+
+
+
 }

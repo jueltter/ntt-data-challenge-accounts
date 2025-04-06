@@ -30,16 +30,9 @@ public class CuentaRepository {
 
     public Mono<List<Cuenta>> findbyClienteId(String clienteId) {
         return repository.findByClienteId(clienteId)
-                .defaultIfEmpty(Cuenta.getDefaultInstance())
+                .defaultIfEmpty(Collections.emptyList())
                 .onErrorMap(RepositoryException::getReadException)
-                .doOnError(error -> log.error("Error finding accounts by client id", error))
-                .map(cuenta  -> {
-                    if (!cuenta.isValidId()) {
-                        return Collections.emptyList();
-                    } else {
-                        return List.of(cuenta);
-                    }
-                });
+                .doOnError(error -> log.error("Error finding accounts by client id", error));
     }
 
     public Mono<Cuenta> create(Cuenta cuenta) {
@@ -64,6 +57,13 @@ public class CuentaRepository {
         return repository.delete(cuenta)
                 .onErrorMap(RepositoryException::getDeleteException)
                 .doOnError(e -> log.error("Error deleting cuenta", e));
+    }
+
+    public Mono<Cuenta> findByNumeroCuenta(String numeroCuenta) {
+        return repository.findByNumeroCuenta(numeroCuenta)
+                .onErrorMap(RepositoryException::getReadException)
+                .doOnError(e -> log.error("Error finding cuenta by numeroCuenta", e))
+                .defaultIfEmpty(Cuenta.getDefaultInstance());
     }
 
 }
