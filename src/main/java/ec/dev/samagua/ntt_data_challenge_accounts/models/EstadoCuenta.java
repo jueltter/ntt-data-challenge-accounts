@@ -1,5 +1,6 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.models;
 
+import ec.dev.samagua.ntt_data_challenge_accounts.clients_models.Cliente;
 import ec.dev.samagua.ntt_data_challenge_accounts.entities.Cuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.entities.MovimientoCuenta;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,7 @@ public class EstadoCuenta {
     private String clienteId;
     private LocalDateTime fechaInicio;
     private LocalDateTime fechaFin;
+    private Cliente cliente;
     private List<EstadoCuentaDetalle> detalles;
 
     public void agregarCuenta(Cuenta cuenta) {

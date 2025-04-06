@@ -1,6 +1,5 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.services;
 
-import ec.dev.samagua.ntt_data_challenge_accounts.clients_models.Cliente;
 import ec.dev.samagua.ntt_data_challenge_accounts.clients_repositories.ClienteRepository;
 import ec.dev.samagua.ntt_data_challenge_accounts.entities.Cuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.CuentaRepository;
@@ -44,7 +43,7 @@ public class CuentaServiceImpl implements CuentaService {
             return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("nombreCliente", "is mandatory")));
         }
 
-        return clienteRepository.findByNombre(cuenta.getNombreCliente())
+        return clienteRepository.findByNombreOrClienteId(cuenta.getNombreCliente(), null)
                 .flatMap(clientes -> {
                     if (clientes.isEmpty()) {
                         return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("nombreCliente", "is invalid")));
@@ -82,7 +81,7 @@ public class CuentaServiceImpl implements CuentaService {
 
                     atomicEntity.set(entity);
 
-                    return clienteRepository.findByNombre(newData.getNombreCliente())
+                    return clienteRepository.findByNombreOrClienteId(newData.getNombreCliente(), null)
                             .flatMap(clientes -> {
                                 if (clientes.isEmpty()) {
                                     return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("nombreCliente", "is invalid")));
@@ -125,7 +124,7 @@ public class CuentaServiceImpl implements CuentaService {
 
                     atomicEntity.set(entity);
 
-                    return clienteRepository.findByNombre(newData.getNombreCliente())
+                    return clienteRepository.findByNombreOrClienteId(newData.getNombreCliente(), null)
 
                             .flatMap(clientes -> {
                                 if (newData.getNombreCliente() != null && clientes.isEmpty()) {

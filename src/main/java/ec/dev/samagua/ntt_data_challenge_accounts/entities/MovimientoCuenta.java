@@ -51,6 +51,15 @@ public class MovimientoCuenta {
     @Transient
     private String numeroCuenta;
 
+    @Transient
+    private String nombreCliente;
+
+    @Transient
+    private String tipoCuenta;
+
+    @Transient
+    private String estadoCuenta;
+
     public static MovimientoCuenta getDefaultInstance() {
         return MovimientoCuenta.builder()
                 .id(-1L)

@@ -1,5 +1,7 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.services;
 
+import ec.dev.samagua.ntt_data_challenge_accounts.clients_repositories.ClienteRepository;
+import ec.dev.samagua.ntt_data_challenge_accounts.entities.MovimientoCuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.models.EstadoCuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.CuentaRepository;
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.MovimientoCuentaRepository;
@@ -12,6 +14,8 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
@@ -22,9 +26,17 @@ public class ReporteServiceImpl implements ReporteService {
 
     private final CuentaRepository cuentaRepository;
     private final MovimientoCuentaRepository movimientoCuentaRepository;
+    private final ClienteRepository clienteRepository;
+
+
 
     @Override
-    public Mono<Reporte> generarEstadoCuenta(String clienteId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+    public Mono<Reporte> generarReporteEstadoCuenta(String clienteId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        return null;
+    }
+
+    @Override
+    public Mono<List<MovimientoCuenta>> generarEstadoCuenta(String clienteId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         AtomicReference<EstadoCuenta> estadoCuentaRef = new AtomicReference<>(EstadoCuenta.builder()
                 .clienteId(clienteId)
                 .fechaInicio(fechaInicio)
@@ -33,21 +45,33 @@ public class ReporteServiceImpl implements ReporteService {
                 .build());
 
 
-        return cuentaRepository.findbyClienteId(clienteId)
+        return  clienteRepository.findByNombreOrClienteId(null, clienteId).flatMap(clientes -> {
+                    if (clientes.isEmpty())    {
+                        return Mono.error(new IllegalArgumentException("Cliente no encontrado"));
+                    }
+                    else {
+                        estadoCuentaRef.updateAndGet(estadoCuenta -> {
+                            estadoCuenta.setCliente(clientes.stream().findFirst().get());
+                            return estadoCuenta;
+                        });
+
+                    }
+
+                    return cuentaRepository.findbyClienteId(clienteId);
+                })
 
                 .flatMapMany(Flux::fromIterable).flatMap(cuenta -> {
 
-                    estadoCuentaRef.updateAndGet(estadoCuenta -> {
-                        estadoCuenta.agregarCuenta(cuenta);
-                        return estadoCuenta;
-                    });
+                            estadoCuentaRef.updateAndGet(estadoCuenta -> {
+                                estadoCuenta.agregarCuenta(cuenta);
+                                return estadoCuenta;
+                            });
 
-                    return movimientoCuentaRepository.findByCuentaAndFechaBetween(cuenta.getId(), fechaInicio, fechaFin);
+                            return movimientoCuentaRepository.findByCuentaAndFechaBetween(cuenta.getId(), fechaInicio, fechaFin);
+                        }
 
-                }
 
-
-            ).flatMap(movimientos -> {
+                ).flatMap(movimientos -> {
                     AtomicReference<Long> cuentaIdRef = new AtomicReference<>(INVALID_ID);
 
                     movimientos.stream().findFirst().ifPresent(movimiento -> {
@@ -69,16 +93,20 @@ public class ReporteServiceImpl implements ReporteService {
 
                 }).collectList().flatMap(lista -> {
                     EstadoCuenta estadoCuenta = estadoCuentaRef.get();
-                    Reporte reporte = Reporte.builder()
-                            .reporte("reporte.jasper")
-                            .parametros(estadoCuenta.generarParametros())
-                            .nombre("estado-cuenta.pdf")
-                            .tipoMime("application/pdf")
-                            .build();
+                    log.debug("estado de cuenta: {}", estadoCuenta);
 
-                    //reporte.updateBytesAsBase64();
+                    List<MovimientoCuenta> movimientos = estadoCuenta.getDetalles().stream().flatMap(detalle -> {
+                        detalle.getMovimientos().forEach(movimiento -> {
+                            movimiento.setNombreCliente(estadoCuenta.getCliente().getNombre());
+                            movimiento.setNumeroCuenta(detalle.getCuenta().getNumeroCuenta());
+                            movimiento.setTipoCuenta(detalle.getCuenta().getTipoCuenta());
+                            movimiento.setEstadoCuenta(detalle.getCuenta().getEstado());
+                        });
 
-                    return Mono.just(reporte);
+                        return detalle.getMovimientos().stream();
+                    }).sorted(Comparator.comparing(MovimientoCuenta::getFecha)).toList();
+
+                    return Mono.just(movimientos);
                 });
     }
 }

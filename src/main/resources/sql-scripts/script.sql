@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS cuenta;
+DROP TABLE IF EXISTS cuenta cascade;
 
 CREATE TABLE cuenta (
 id BIGSERIAL PRIMARY KEY,
@@ -9,7 +9,7 @@ estado VARCHAR(255) NOT NULL,
  cliente_id VARCHAR(255) NOT NULL
 );
 
-DROP TABLE IF EXISTS movimiento_cuenta;
+DROP TABLE IF EXISTS movimiento_cuenta cascade;
 
 CREATE TABLE movimiento_cuenta (
 id BIGSERIAL PRIMARY KEY,

@@ -1,18 +1,10 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.utils_models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperExportManager;
-import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
-import java.util.Base64;
-import java.util.Collections;
 import java.util.Map;
 
 @Data
@@ -27,8 +19,7 @@ public class Reporte {
     private String tipoMime;
     private String bytesAsBase64;
 
-
-    public void updateBytesAsBase64() {
+    /*public void updateBytesAsBase64() {
         try {
             JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(Collections.singletonList(new Object()));
             JasperPrint jasperPrint = JasperFillManager.fillReport(this.reporte, this.parametros, dataSource);
@@ -37,6 +28,6 @@ public class Reporte {
         } catch (JRException ex) {
             throw new IllegalArgumentException(ex);
         }
-    }
+    }*/
 
 }
