@@ -13,12 +13,13 @@ DROP TABLE IF EXISTS movimiento_cuenta;
 
 CREATE TABLE movimiento_cuenta (
 id BIGSERIAL PRIMARY KEY,
-fecha DATE NOT NULL,
-tipo_movimiento VARCHAR(255) NOT NULL,
+fecha TIMESTAMP NOT NULL,
+ tipo_movimiento VARCHAR(255) NOT NULL,
  valor NUMERIC(19, 2) NOT NULL,
- saldo NUMERIC(19, 2) NOT NULL,
-cuenta BIGINT NOT NULL,
- FOREIGN KEY (cuenta) REFERENCES cuenta(id)
+  saldo NUMERIC(19, 2) NOT NULL,
+ saldo_anterior NUMERIC(19, 2) NOT NULL,
+  cuenta BIGINT NOT NULL,
+FOREIGN KEY (cuenta) REFERENCES cuenta(id)
 );
 
 INSERT INTO cuenta (numero_cuenta, tipo_cuenta, saldo_inicial, estado, cliente_id) VALUES

@@ -1,5 +1,6 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.entities;
 
+import ec.dev.samagua.ntt_data_challenge_accounts.utils.BalanceUtils;
 import ec.dev.samagua.ntt_data_challenge_accounts.utils_models.DataValidationResult;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +12,7 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class MovimientoCuenta {
     private Long id;
 
     @Column(value= "fecha")
-    private LocalDate fecha;
+    private LocalDateTime fecha;
 
     @Column(value= "tipo_movimiento")
     private String tipoMovimiento;
@@ -43,6 +44,9 @@ public class MovimientoCuenta {
 
     @Column(value= "cuenta")
     private Long cuenta;
+
+    @Column(value= "saldo_anterior")
+    private BigDecimal saldoAnterior;
 
     @Transient
     private String numeroCuenta;
@@ -58,7 +62,7 @@ public class MovimientoCuenta {
     }
 
 
-    public DataValidationResult validateForCreating(BigDecimal balance) {
+    public DataValidationResult validateForCreating() {
         Map<String, String> errors = new HashMap<>();
 
         // validate id
@@ -76,8 +80,7 @@ public class MovimientoCuenta {
             errors.put("valor", "is mandatory and must be different than 0");
         }
         else {
-            if (this.getValor().compareTo(BigDecimal.ZERO) < 0
-                    && balance.compareTo(this.getValor().abs()) < 0) {
+            if (!BalanceUtils.canApply(this.getSaldoAnterior(), this.getValor())) {
                 errors.put("valor", "balance not available");
             }
         }
@@ -96,7 +99,7 @@ public class MovimientoCuenta {
                 .build();
     }
 
-    public DataValidationResult validateForUpdating(BigDecimal balance) {
+    public DataValidationResult validateForUpdating() {
         Map<String, String> errors = new HashMap<>();
 
         // validate account movement type
@@ -109,8 +112,7 @@ public class MovimientoCuenta {
             errors.put("valor", "is mandatory and must be different than 0");
         }
         else {
-            if (this.getValor().compareTo(BigDecimal.ZERO) < 0
-                    && balance.compareTo(this.getValor().abs()) < 0) {
+            if (!BalanceUtils.canApply(this.getSaldoAnterior(), this.getValor())) {
                 errors.put("valor", "balance not available");
             }
         }
@@ -129,7 +131,7 @@ public class MovimientoCuenta {
                 .build();
     }
 
-    public DataValidationResult validateForPatching(BigDecimal balance) {
+    public DataValidationResult validateForPatching() {
         Map<String, String> errors = new HashMap<>();
 
         // validate account movement type
@@ -143,10 +145,8 @@ public class MovimientoCuenta {
                 errors.put("valor", "must be different than 0");
             }
             else {
-                if (this.getValor().compareTo(BigDecimal.ZERO) < 0) {
-                    if (balance.compareTo(this.getValor().abs()) < 0)  {
-                        errors.put("valor", "balance not available");
-                    }
+                if (!BalanceUtils.canApply(this.getSaldoAnterior(), this.getValor())) {
+                    errors.put("valor", "balance not available");
 
                 }
             }

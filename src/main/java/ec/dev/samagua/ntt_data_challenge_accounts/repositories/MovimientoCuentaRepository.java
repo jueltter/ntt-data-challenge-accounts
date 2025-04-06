@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 @Repository
@@ -33,7 +34,8 @@ public class MovimientoCuentaRepository {
     public Mono<List<MovimientoCuenta>> findByCuentaAndFechaBetween(Long cuenta, LocalDate fechaInicial, LocalDate fechaFinal) {
         return repository.findByCuentaAndFechaBetween(cuenta, fechaInicial, fechaFinal)
                 .onErrorMap(RepositoryException::getReadException)
-                .doOnError(e -> log.error("Error finding account movements by account and date range", e));
+                .doOnError(e -> log.error("Error finding account movements by account and date range", e))
+                .collectList();
     }
 
     public Mono<MovimientoCuenta> create(MovimientoCuenta movimientoCuenta) {
@@ -57,7 +59,11 @@ public class MovimientoCuentaRepository {
     public Mono<List<MovimientoCuenta>> findByCuenta(Long cuenta) {
         return repository.findByCuenta(cuenta)
                 .onErrorMap(RepositoryException::getReadException)
-                .doOnError(e -> log.error("Error finding account movements by account", e));
+                .doOnError(e -> log.error("Error finding account movements by account", e))
+                .collectList()
+                //.defaultIfEmpty(Collections.emptyList())
+                .doOnSuccess(obj -> log.debug("findByCuenta retorno: {}", obj));
+
     }
 
     public Mono<MovimientoCuenta> findById(Long id) {

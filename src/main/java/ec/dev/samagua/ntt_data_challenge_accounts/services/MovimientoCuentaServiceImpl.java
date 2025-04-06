@@ -1,8 +1,11 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.services;
 
+import ec.dev.samagua.ntt_data_challenge_accounts.entities.Cuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.entities.MovimientoCuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.CuentaRepository;
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.MovimientoCuentaRepository;
+import ec.dev.samagua.ntt_data_challenge_accounts.utils.BalanceUtils;
+import ec.dev.samagua.ntt_data_challenge_accounts.utils.BeanCopyUtil;
 import ec.dev.samagua.ntt_data_challenge_accounts.utils_exceptions.InvalidDataException;
 import ec.dev.samagua.ntt_data_challenge_accounts.utils_models.DataValidationResult;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +14,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -40,31 +43,24 @@ public class MovimientoCuentaServiceImpl implements MovimientoCuentaService {
                     }
 
                     movimientoCuenta.setCuenta(cuenta.getId());
-                    return repository.findByCuenta(movimientoCuenta.getCuenta());
+                    movimientoCuenta.setSaldoAnterior(cuenta.getSaldoInicial());
+                    return repository.findByCuenta(cuenta.getId());
                 }
         ).flatMap(movimientos -> {
             movimientos.sort(Comparator.comparing(MovimientoCuenta::getFecha).reversed());
-            AtomicReference<BigDecimal> balanceRef = new AtomicReference<>(BigDecimal.ZERO);
-            movimientos.stream().findFirst().ifPresent(movimiento -> {
-                balanceRef.set(movimiento.getSaldo());
+            movimientos.stream().findFirst().ifPresent(ultimoMovimiento -> {
+                movimientoCuenta.setSaldoAnterior(ultimoMovimiento.getSaldo());
             });
 
-            BigDecimal balance = balanceRef.get();
-
-            DataValidationResult validationResult = movimientoCuenta.validateForCreating(balance);
+            DataValidationResult validationResult = movimientoCuenta.validateForCreating();
 
             if (!validationResult.isValid()) {
                 return Mono.error(InvalidDataException.getInstance(validationResult.getErrors()));
             }
 
-            if (movimientoCuenta.getValor().compareTo(BigDecimal.ZERO) > 0) {
-                balance = balance.add(movimientoCuenta.getValor());
-            }
-            else {
-                balance = balance.subtract(movimientoCuenta.getValor().abs());
-            }
+            BigDecimal balance = BalanceUtils.apply(movimientoCuenta.getSaldoAnterior(), movimientoCuenta.getValor());
 
-            movimientoCuenta.setFecha(LocalDate.now());
+            movimientoCuenta.setFecha(LocalDateTime.now());
             movimientoCuenta.setSaldo(balance);
 
             return repository.create(movimientoCuenta);
@@ -78,44 +74,39 @@ public class MovimientoCuentaServiceImpl implements MovimientoCuentaService {
                 return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("id", "is invalid")));
             }
 
-            return cuentaRepository.findByNumeroCuenta(movimientoCuenta.getNumeroCuenta());
+            return cuentaRepository.findById(movimientoCuenta.getCuenta());
 
         }).flatMap(
                 cuenta -> {
-
-                    if (!cuenta.isValidId()) {
-                        return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("numeroCuenta", "is invalid")));
+                    if (!cuenta.getNumeroCuenta().equals(newData.getNumeroCuenta())) {
+                        return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("numeroCuenta", "is mandatory and cannot be changed")));
                     }
-
-                    newData.setCuenta(cuenta.getId());
-                    return repository.findByCuenta(newData.getCuenta());
+                    return repository.findByCuenta(cuenta.getId());
                 }
         ).flatMap(movimientos -> {
             movimientos.sort(Comparator.comparing(MovimientoCuenta::getFecha).reversed());
-            AtomicReference<BigDecimal> balanceRef = new AtomicReference<>(BigDecimal.ZERO);
-            movimientos.stream().findFirst().ifPresent(movimiento -> {
-                balanceRef.set(movimiento.getSaldo());
-            });
+            MovimientoCuenta ultimoMovimiento = movimientos.stream().findFirst().get();
 
-            BigDecimal balance = balanceRef.get();
+            if (!ultimoMovimiento.getId().equals(id)) {
+                return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("account movement", "is not the last one")));
+            }
 
-            DataValidationResult validationResult = newData.validateForUpdating(balance);
+            newData.setSaldoAnterior(ultimoMovimiento.getSaldoAnterior());
+
+            DataValidationResult validationResult = newData.validateForUpdating();
 
             if (!validationResult.isValid()) {
                 return Mono.error(InvalidDataException.getInstance(validationResult.getErrors()));
             }
 
-            if (newData.getValor().compareTo(BigDecimal.ZERO) > 0) {
-                balance = balance.add(newData.getValor());
-            }
-            else {
-                balance = balance.subtract(newData.getValor().abs());
-            }
+            BigDecimal balance = BalanceUtils.apply(newData.getSaldoAnterior(), newData.getValor());
 
-            newData.setFecha(LocalDate.now());
+            newData.setFecha(LocalDateTime.now());
             newData.setSaldo(balance);
 
-            return repository.update(newData);
+            BeanCopyUtil.copyNonNullProperties(newData, ultimoMovimiento);
+
+            return repository.update(ultimoMovimiento);
         });
     }
 
@@ -126,44 +117,41 @@ public class MovimientoCuentaServiceImpl implements MovimientoCuentaService {
                 return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("id", "is invalid")));
             }
 
-            return cuentaRepository.findByNumeroCuenta(movimientoCuenta.getNumeroCuenta());
+            return cuentaRepository.findById(movimientoCuenta.getCuenta());
 
         }).flatMap(
                 cuenta -> {
-
-                    if (newData.getNumeroCuenta()!= null && !cuenta.isValidId()) {
-                        return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("numeroCuenta", "is invalid")));
+                    if (newData.getNumeroCuenta() != null && !cuenta.getNumeroCuenta().equals(newData.getNumeroCuenta())) {
+                        return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("numeroCuenta", "is mandatory and cannot be changed")));
                     }
-
-                    newData.setCuenta(cuenta.getId());
-                    return repository.findByCuenta(newData.getCuenta());
+                    return repository.findByCuenta(cuenta.getId());
                 }
         ).flatMap(movimientos -> {
             movimientos.sort(Comparator.comparing(MovimientoCuenta::getFecha).reversed());
-            AtomicReference<BigDecimal> balanceRef = new AtomicReference<>(BigDecimal.ZERO);
-            movimientos.stream().findFirst().ifPresent(movimiento -> {
-                balanceRef.set(movimiento.getSaldo());
-            });
+            MovimientoCuenta ultimoMovimiento = movimientos.stream().findFirst().get();
 
-            BigDecimal balance = balanceRef.get();
+            if (!ultimoMovimiento.getId().equals(id)) {
+                return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("account movement", "is not the last one")));
+            }
 
-            DataValidationResult validationResult = newData.validateForPatching(balance);
+            newData.setSaldoAnterior(ultimoMovimiento.getSaldoAnterior());
+
+            DataValidationResult validationResult = newData.validateForPatching();
 
             if (!validationResult.isValid()) {
                 return Mono.error(InvalidDataException.getInstance(validationResult.getErrors()));
             }
 
-            if (newData.getValor().compareTo(BigDecimal.ZERO) > 0) {
-                balance = balance.add(newData.getValor());
-            }
-            else {
-                balance = balance.subtract(newData.getValor().abs());
+            if (newData.getValor() != null) {
+                BigDecimal balance = BalanceUtils.apply(newData.getSaldoAnterior(), newData.getValor());
+                newData.setSaldo(balance);
             }
 
-            newData.setFecha(LocalDate.now());
-            newData.setSaldo(balance);
+            newData.setFecha(LocalDateTime.now());
 
-            return repository.update(newData);
+            BeanCopyUtil.copyNonNullProperties(newData, ultimoMovimiento);
+
+            return repository.update(ultimoMovimiento);
         });
     }
 
@@ -174,7 +162,21 @@ public class MovimientoCuentaServiceImpl implements MovimientoCuentaService {
                 return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("id", "is invalid")));
             }
 
-            return repository.delete(movimientoCuenta);
+            return cuentaRepository.findById(movimientoCuenta.getCuenta());
+
+        }).flatMap(
+                cuenta -> {
+                    return repository.findByCuenta(cuenta.getId());
+                }
+        ).flatMap(movimientos -> {
+            movimientos.sort(Comparator.comparing(MovimientoCuenta::getFecha).reversed());
+            MovimientoCuenta ultimoMovimiento = movimientos.stream().findFirst().get();
+
+            if (!ultimoMovimiento.getId().equals(id)) {
+                return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("account movement", "is not the last one")));
+            }
+
+            return repository.delete(ultimoMovimiento);
         });
     }
 }

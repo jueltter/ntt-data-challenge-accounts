@@ -30,9 +30,9 @@ public class CuentaRepository {
 
     public Mono<List<Cuenta>> findbyClienteId(String clienteId) {
         return repository.findByClienteId(clienteId)
-                .defaultIfEmpty(Collections.emptyList())
                 .onErrorMap(RepositoryException::getReadException)
-                .doOnError(error -> log.error("Error finding accounts by client id", error));
+                .doOnError(error -> log.error("Error finding accounts by client id", error))
+                .collectList();
     }
 
     public Mono<Cuenta> create(Cuenta cuenta) {
