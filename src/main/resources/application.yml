@@ -19,3 +19,12 @@ spring:
     username: postgres
     password: password
     show-sql: true
+logging:
+  level:
+    ec:
+      dev:
+        samagua:
+          ntt_data_challenge_accounts: DEBUG
+
+ntt-data-challenge-clients:
+  url: http://localhost:8762/ntt-data-challenge-clients/api

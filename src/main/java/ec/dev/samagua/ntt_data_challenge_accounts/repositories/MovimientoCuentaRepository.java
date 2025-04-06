@@ -22,4 +22,10 @@ public class MovimientoCuentaRepository {
                 .doOnError(e -> log.error("Error finding all account movements",e));
     }
 
+    public Mono<Long> countByCuenta(Long cuenta) {
+        return repository.countByCuenta(cuenta)
+                .onErrorMap(RepositoryException::getReadException)
+                .doOnError(e -> log.error("Error counting account movements by account", e));
+    }
+
 }
