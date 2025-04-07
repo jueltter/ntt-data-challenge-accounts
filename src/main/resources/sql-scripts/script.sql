@@ -1,3 +1,19 @@
+-- Drop the database if it already exists
+DROP DATABASE IF EXISTS "ntt-data-challenge-accounts" WITH (FORCE);
+
+-- Create the new database
+CREATE DATABASE "ntt-data-challenge-accounts"
+WITH
+    OWNER = postgres
+    ENCODING = 'UTF8'
+    LC_COLLATE = 'en_US.utf8'
+    LC_CTYPE = 'en_US.utf8'
+    TABLESPACE = pg_default
+    CONNECTION LIMIT = -1;
+
+-- Connect to the newly created database using pgAdmin or a psql-specific command
+-- \connect database
+
 DROP TABLE IF EXISTS cuenta cascade;
 
 CREATE TABLE cuenta (
@@ -22,6 +38,7 @@ fecha TIMESTAMP NOT NULL,
 FOREIGN KEY (cuenta) REFERENCES cuenta(id)
 );
 
+/*
 INSERT INTO cuenta (numero_cuenta, tipo_cuenta, saldo_inicial, estado, cliente_id) VALUES
  ('1234567890', 'AHORROS', 1000.00, 'TRUE', 'C001234567'),
  ('2345678901', 'CORRIENTE', 1500.50, 'TRUE', 'C002345678'),
@@ -33,5 +50,4 @@ INSERT INTO cuenta (numero_cuenta, tipo_cuenta, saldo_inicial, estado, cliente_i
   ('8901234567', 'CORRIENTE', 4500.00, 'TRUE', 'C008901234'),
    ('9012345678', 'AHORROS', 5000.25, 'TRUE', 'C009012345'),
 ('0123456789', 'CORRIENTE', 5500.50, 'TRUE', 'C010123456');
-
-SELECT * FROM cuenta;
+*/
