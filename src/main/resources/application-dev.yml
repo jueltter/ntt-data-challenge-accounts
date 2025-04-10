@@ -16,7 +16,7 @@ spring:
       indent-output: false
   r2dbc:
     url: "r2dbc:postgresql://localhost:5432/ntt-data-challenge"
-    username: postgress
+    username: postgres
     password: password
     show-sql: true
 logging:
