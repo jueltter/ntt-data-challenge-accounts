@@ -10,7 +10,6 @@ import ec.dev.samagua.ntt_data_challenge_accounts.models_mappers.EstadoClienteMa
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.CuentaRepository;
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.MovimientoCuentaRepository;
 import ec.dev.samagua.ntt_data_challenge_accounts.utils_exceptions.InvalidDataException;
-import ec.dev.samagua.ntt_data_challenge_accounts.utils_models.Reporte;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,11 +34,6 @@ public class ReporteServiceImpl implements ReporteService {
     private final EstadoClienteMapper estadoClienteMapper;
     private final EstadoClienteCuentaMapper estadoClienteCuentaMapper;
     private final EstadoClienteCuentaMovimientoMapper estadoClienteCuentaMovimientoMapper;
-
-    @Override
-    public Mono<Reporte> generarReporteEstadoCuenta(String idCliente, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
-        return null;
-    }
 
     @Override
     public Mono<List<EstadoClienteCuentaMovimiento>> generarEstadoCliente(String idCliente, LocalDateTime fechaInicio, LocalDateTime fechaFin) {

@@ -131,9 +131,7 @@ public class CuentaServiceImpl implements CuentaService {
                                     return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("nombreCliente", "is invalid")));
                                 }
 
-                                clientes.stream().findFirst().ifPresent(cliente -> {
-                                    newData.setClienteId(cliente.getClienteId());
-                                });
+                                clientes.stream().findFirst().ifPresent(cliente -> newData.setClienteId(cliente.getClienteId()));
 
                                 return repository.countByClienteId(newData.getNumeroCuenta());
                             });

@@ -29,8 +29,8 @@ public class ReporteController {
 
     @GetMapping("/reportes")
     public Mono<ResponseEntity<ControllerResult<List<EstadoClienteCuentaMovimientoDto>>>> generarEstadoCuenta(
-            @RequestParam(name = "cliente-id", required = true) String clienteId,
-            @RequestParam(name = "fecha", required = true) String rangoFechasAsString) {
+            @RequestParam(name = "cliente-id") String clienteId,
+            @RequestParam(name = "fecha") String rangoFechasAsString) {
 
         log.debug("executing GET /reportes, clienteId: {}, fecha: {}", clienteId, rangoFechasAsString);
 

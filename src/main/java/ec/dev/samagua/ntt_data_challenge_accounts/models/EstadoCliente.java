@@ -36,7 +36,7 @@ public class EstadoCliente {
 
     /**
      * Adds a new cuenta to the list of cuentas.
-     * @param cuenta
+     * @param cuenta cuenta
      */
     public void addCuenta(EstadoClienteCuenta cuenta) {
         if (cuentas == null) {
@@ -47,16 +47,14 @@ public class EstadoCliente {
 
     /**
      * Adds a list of movimientos to a specific cuenta.
-     * @param idCuenta
-     * @param movimientos
+     * @param idCuenta id cuenta
+     * @param movimientos movimientos
      */
     public void addMovimientosCuenta(Long idCuenta, List<EstadoClienteCuentaMovimiento> movimientos) {
         Stream.ofNullable(cuentas)
                 .flatMap(obj -> cuentas.stream())
                 .filter(obj -> obj.getId().equals(idCuenta))
                 .findFirst()
-                .ifPresent(cuenta -> {
-                    cuenta.setMovimientos(movimientos);
-                });
+                .ifPresent(cuenta -> cuenta.setMovimientos(movimientos));
     }
 }

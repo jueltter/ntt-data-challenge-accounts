@@ -1,6 +1,5 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.services;
 
-import ec.dev.samagua.ntt_data_challenge_accounts.entities.Cuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.entities.MovimientoCuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.CuentaRepository;
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.MovimientoCuentaRepository;
@@ -18,7 +17,6 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @RequiredArgsConstructor
@@ -48,9 +46,7 @@ public class MovimientoCuentaServiceImpl implements MovimientoCuentaService {
                 }
         ).flatMap(movimientos -> {
             movimientos.sort(Comparator.comparing(MovimientoCuenta::getFecha).reversed());
-            movimientos.stream().findFirst().ifPresent(ultimoMovimiento -> {
-                movimientoCuenta.setSaldoAnterior(ultimoMovimiento.getSaldo());
-            });
+            movimientos.stream().findFirst().ifPresent(ultimoMovimiento -> movimientoCuenta.setSaldoAnterior(ultimoMovimiento.getSaldo()));
 
             DataValidationResult validationResult = movimientoCuenta.validateForCreating();
 
@@ -165,9 +161,7 @@ public class MovimientoCuentaServiceImpl implements MovimientoCuentaService {
             return cuentaRepository.findById(movimientoCuenta.getCuenta());
 
         }).flatMap(
-                cuenta -> {
-                    return repository.findByCuenta(cuenta.getId());
-                }
+                cuenta -> repository.findByCuenta(cuenta.getId())
         ).flatMap(movimientos -> {
             movimientos.sort(Comparator.comparing(MovimientoCuenta::getFecha).reversed());
             MovimientoCuenta ultimoMovimiento = movimientos.stream().findFirst().get();

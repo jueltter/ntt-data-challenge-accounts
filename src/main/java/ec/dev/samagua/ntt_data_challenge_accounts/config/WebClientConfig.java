@@ -1,4 +1,4 @@
-package ec.dev.samagua.ntt_data_challenge_accounts.utils_config;
+package ec.dev.samagua.ntt_data_challenge_accounts.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

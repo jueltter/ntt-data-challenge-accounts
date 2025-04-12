@@ -1,9 +1,7 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.controllers;
 
-import ec.dev.samagua.ntt_data_challenge_accounts.dtos.CuentaDto;
 import ec.dev.samagua.ntt_data_challenge_accounts.dtos.MovimientoCuentaDto;
 import ec.dev.samagua.ntt_data_challenge_accounts.dtos_mappers.MovimientoCuentaDtoMapper;
-import ec.dev.samagua.ntt_data_challenge_accounts.entities.Cuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.entities.MovimientoCuenta;
 import ec.dev.samagua.ntt_data_challenge_accounts.services.MovimientoCuentaService;
 import ec.dev.samagua.ntt_data_challenge_accounts.utils_controllers_models.ControllerResult;
