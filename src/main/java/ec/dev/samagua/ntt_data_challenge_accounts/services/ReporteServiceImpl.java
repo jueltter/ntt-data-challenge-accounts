@@ -1,10 +1,15 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.services;
 
 import ec.dev.samagua.ntt_data_challenge_accounts.clients_repositories.ClienteRepository;
-import ec.dev.samagua.ntt_data_challenge_accounts.entities.MovimientoCuenta;
-import ec.dev.samagua.ntt_data_challenge_accounts.models.EstadoCuenta;
+import ec.dev.samagua.ntt_data_challenge_accounts.models.EstadoCliente;
+import ec.dev.samagua.ntt_data_challenge_accounts.models.EstadoClienteCuenta;
+import ec.dev.samagua.ntt_data_challenge_accounts.models.EstadoClienteCuentaMovimiento;
+import ec.dev.samagua.ntt_data_challenge_accounts.models_mappers.EstadoClienteCuentaMapper;
+import ec.dev.samagua.ntt_data_challenge_accounts.models_mappers.EstadoClienteCuentaMovimientoMapper;
+import ec.dev.samagua.ntt_data_challenge_accounts.models_mappers.EstadoClienteMapper;
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.CuentaRepository;
 import ec.dev.samagua.ntt_data_challenge_accounts.repositories.MovimientoCuentaRepository;
+import ec.dev.samagua.ntt_data_challenge_accounts.utils_exceptions.InvalidDataException;
 import ec.dev.samagua.ntt_data_challenge_accounts.utils_models.Reporte;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,100 +18,96 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ReporteServiceImpl implements ReporteService {
-    private static final long INVALID_ID = -1L;
 
     private final CuentaRepository cuentaRepository;
     private final MovimientoCuentaRepository movimientoCuentaRepository;
     private final ClienteRepository clienteRepository;
+    private final JsonService jsonService;
 
-
+    private final EstadoClienteMapper estadoClienteMapper;
+    private final EstadoClienteCuentaMapper estadoClienteCuentaMapper;
+    private final EstadoClienteCuentaMovimientoMapper estadoClienteCuentaMovimientoMapper;
 
     @Override
-    public Mono<Reporte> generarReporteEstadoCuenta(String clienteId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+    public Mono<Reporte> generarReporteEstadoCuenta(String idCliente, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         return null;
     }
 
     @Override
-    public Mono<List<MovimientoCuenta>> generarEstadoCuenta(String clienteId, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
-        AtomicReference<EstadoCuenta> estadoCuentaRef = new AtomicReference<>(EstadoCuenta.builder()
-                .clienteId(clienteId)
-                .fechaInicio(fechaInicio)
-                .fechaFin(fechaFin)
-                .detalles(new ArrayList<>())
-                .build());
+    public Mono<List<EstadoClienteCuentaMovimiento>> generarEstadoCliente(String idCliente, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        AtomicReference<EstadoCliente> estadoClienteRef = new AtomicReference<>();
+        AtomicReference<List<EstadoClienteCuentaMovimiento>> movimientosEstadoClienteRef = new AtomicReference<>(new ArrayList<>());
 
-
-        return  clienteRepository.findByNombreOrClienteId(null, clienteId).flatMap(clientes -> {
-                    if (clientes.isEmpty())    {
-                        return Mono.error(new IllegalArgumentException("Cliente no encontrado"));
-                    }
-                    else {
-                        estadoCuentaRef.updateAndGet(estadoCuenta -> {
-                            estadoCuenta.setCliente(clientes.stream().findFirst().get());
-                            return estadoCuenta;
+        return clienteRepository.findByNombreOrClienteId(null, idCliente)
+                .flatMap(clientes -> {
+                    if (clientes.isEmpty()) {
+                        return Mono.error(InvalidDataException.getInstance(Collections.singletonMap("cliente","not found")));
+                    } else {
+                        clientes.stream().findFirst().ifPresent(cliente -> {
+                            EstadoCliente estadoCliente = estadoClienteMapper.entityToModel(cliente);
+                            estadoClienteRef.set(estadoCliente);
                         });
-
                     }
 
-                    return cuentaRepository.findbyClienteId(clienteId);
+                    return cuentaRepository.findbyClienteId(idCliente);
                 })
-
-                .flatMapMany(Flux::fromIterable).flatMap(cuenta -> {
-
-                            estadoCuentaRef.updateAndGet(estadoCuenta -> {
-                                estadoCuenta.agregarCuenta(cuenta);
-                                return estadoCuenta;
-                            });
-
-                            return movimientoCuentaRepository.findByCuentaAndFechaBetween(cuenta.getId(), fechaInicio, fechaFin);
-                        }
-
-
-                ).flatMap(movimientos -> {
-                    AtomicReference<Long> cuentaIdRef = new AtomicReference<>(INVALID_ID);
-
-                    movimientos.stream().findFirst().ifPresent(movimiento -> {
-                        cuentaIdRef.set(movimiento.getCuenta());
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(cuenta -> {
+                    estadoClienteRef.updateAndGet(estadoCliente -> {
+                        EstadoClienteCuenta estadoCuenta = estadoClienteCuentaMapper.entityToModel(cuenta);
+                        estadoCliente.addCuenta(estadoCuenta);
+                        return estadoCliente;
                     });
 
-                    Long cuentaId = cuentaIdRef.get();
+                    return movimientoCuentaRepository.findByCuentaAndFechaBetween(cuenta.getId(), fechaInicio, fechaFin);
+                })
+                .flatMap(movimientosCuenta -> {
+                    if (!movimientosCuenta.isEmpty()) {
+                        Long idCuenta = movimientosCuenta.stream().findFirst().get().getCuenta();
 
-                    if (cuentaId != INVALID_ID) {
-                        estadoCuentaRef.updateAndGet(estadoCuenta -> {
-                            estadoCuenta.agregarMovimientosACuenta(cuentaId, movimientos);
-                            return estadoCuenta;
+                        estadoClienteRef.updateAndGet(estadoCliente -> {
+                            List<EstadoClienteCuentaMovimiento> movimientosEstadoCuenta = movimientosCuenta.stream()
+                                    .map(estadoClienteCuentaMovimientoMapper::entityToModel)
+                                    .toList();
+
+                            estadoCliente.addMovimientosCuenta(idCuenta, movimientosEstadoCuenta);
+
+                            return estadoCliente;
                         });
-
                     }
+                    return Mono.empty();
+                })
+                .then(Mono.fromRunnable(() -> movimientosEstadoClienteRef.updateAndGet(movimientosEstadoCliente -> {
+                    EstadoCliente estadoCliente = estadoClienteRef.get();
+                    log.debug("estadoCliente: {}", jsonService.toJson(estadoCliente));
 
+                    List<EstadoClienteCuentaMovimiento> movimientosEstadoClienteToAdd = estadoCliente.getCuentas().stream().flatMap(cuenta -> {
+                        Stream<List<EstadoClienteCuentaMovimiento>> objectAttributeAsStream = Stream.ofNullable(cuenta.getMovimientos());
 
-                    return Mono.just(movimientos);
+                        List<EstadoClienteCuentaMovimiento> movimientosCuenta = objectAttributeAsStream.flatMap(Collection::stream).toList();
 
-                }).collectList().flatMap(lista -> {
-                    EstadoCuenta estadoCuenta = estadoCuentaRef.get();
-                    log.debug("estado de cuenta: {}", estadoCuenta);
-
-                    List<MovimientoCuenta> movimientos = estadoCuenta.getDetalles().stream().flatMap(detalle -> {
-                        detalle.getMovimientos().forEach(movimiento -> {
-                            movimiento.setNombreCliente(estadoCuenta.getCliente().getNombre());
-                            movimiento.setNumeroCuenta(detalle.getCuenta().getNumeroCuenta());
-                            movimiento.setTipoCuenta(detalle.getCuenta().getTipoCuenta());
-                            movimiento.setEstadoCuenta(detalle.getCuenta().getEstado());
+                        movimientosCuenta.forEach(movimiento -> {
+                            movimiento.setNombreCliente(estadoCliente.getNombre());
+                            movimiento.setNumeroCuenta(cuenta.getNumeroCuenta());
+                            movimiento.setTipoCuenta(cuenta.getTipoCuenta());
+                            movimiento.setEstadoCuenta(cuenta.getEstado());
                         });
 
-                        return detalle.getMovimientos().stream();
-                    }).sorted(Comparator.comparing(MovimientoCuenta::getFecha)).toList();
+                        return movimientosCuenta.stream();
+                    }).sorted(Comparator.comparing(EstadoClienteCuentaMovimiento::getFecha)).toList();
 
-                    return Mono.just(movimientos);
-                });
+                    movimientosEstadoCliente.addAll(movimientosEstadoClienteToAdd);
+
+                    return movimientosEstadoCliente;
+                })))
+                .then(Mono.just(movimientosEstadoClienteRef.get()));
     }
 }

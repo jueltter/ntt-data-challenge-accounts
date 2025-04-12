@@ -1,8 +1,8 @@
 package ec.dev.samagua.ntt_data_challenge_accounts.controllers;
 
-import ec.dev.samagua.ntt_data_challenge_accounts.dtos.MovimientoCuentaDto;
-import ec.dev.samagua.ntt_data_challenge_accounts.dtos_mappers.MovimientoCuentaDtoMapper;
-import ec.dev.samagua.ntt_data_challenge_accounts.entities.MovimientoCuenta;
+import ec.dev.samagua.ntt_data_challenge_accounts.dtos.EstadoClienteCuentaMovimientoDto;
+import ec.dev.samagua.ntt_data_challenge_accounts.dtos_mappers.EstadoClienteCuentaMovimientoDtoMapper;
+import ec.dev.samagua.ntt_data_challenge_accounts.models.EstadoClienteCuentaMovimiento;
 import ec.dev.samagua.ntt_data_challenge_accounts.services.ReporteService;
 import ec.dev.samagua.ntt_data_challenge_accounts.utils.CustomDateUtils;
 import ec.dev.samagua.ntt_data_challenge_accounts.utils_controllers_models.ControllerResult;
@@ -25,10 +25,10 @@ import java.util.List;
 @RequestMapping("/api")
 public class ReporteController {
     private final ReporteService service;
-    private final MovimientoCuentaDtoMapper mapper;
+    private final EstadoClienteCuentaMovimientoDtoMapper mapper;
 
     @GetMapping("/reportes")
-    public Mono<ResponseEntity<ControllerResult<List<MovimientoCuentaDto>>>> generarEstadoCuenta(
+    public Mono<ResponseEntity<ControllerResult<List<EstadoClienteCuentaMovimientoDto>>>> generarEstadoCuenta(
             @RequestParam(name = "cliente-id", required = true) String clienteId,
             @RequestParam(name = "fecha", required = true) String rangoFechasAsString) {
 
@@ -36,10 +36,10 @@ public class ReporteController {
 
         DateRange rangoFechas = CustomDateUtils.getDateRange(rangoFechasAsString);
 
-        Mono<List<MovimientoCuenta>> entities = service.generarEstadoCuenta(clienteId, rangoFechas.getStartDate(), rangoFechas.getEndDate());
+        Mono<List<EstadoClienteCuentaMovimiento>> entities = service.generarEstadoCliente(clienteId, rangoFechas.getStartDate(), rangoFechas.getEndDate());
         return entities.map(obj -> {
-            ControllerResult<List<MovimientoCuentaDto>> body = ControllerResult.getSuccessResult(obj.stream()
-                    .map(mapper::entityToDtoReport)
+            ControllerResult<List<EstadoClienteCuentaMovimientoDto>> body = ControllerResult.getSuccessResult(obj.stream()
+                    .map(mapper::modelToDto)
                     .toList());
             return ResponseEntity
                     .status(HttpStatus.OK)
